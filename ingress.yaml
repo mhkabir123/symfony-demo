@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: php-app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+      - symfony-php-demo.com
+    secretName: testsecret-tls
+  rules:
+    - host: symfony-php-demo.com  # Point this in /etc/hosts or use real domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: php-app-service
+                port:
+                  number: 80
