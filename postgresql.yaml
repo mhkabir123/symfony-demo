@@ -1,0 +1,75 @@
+# create database secret with base64 encoded
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+data:
+  POSTGRES_DB: YXBw
+  POSTGRES_USER: YXBw
+  POSTGRES_PASSWORD: c2VjcmV0
+
+---
+
+# create database service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: php-db-sa
+
+---
+# create postgres database with StatefulSet
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: "postgres"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      serviceAccountName: php-db-sa
+      containers:
+        - name: postgres
+          image: 'postgres:15'
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+              subPath: data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+---
+# create a database service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+

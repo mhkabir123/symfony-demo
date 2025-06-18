@@ -1,0 +1,55 @@
+## Symfony Demo Application Deployment on GKE
+
+The test has been successfully performed on a managed Kubernetes cluster (GKE),
+using the NGINX Ingress Controller for external access.
+
+#Instructions to Deploy and Access the Symfony Application:
+
+1. Make the setup script executable:
+
+    $ chmod +x setup.sh
+
+2. Run the setup script to deploy all required resources:
+
+    $ ./setup.sh
+
+3. Add dns entry to the local host file like: $INGRESS_IP symfony-php-demo.com (follow the output of setup.sh)
+
+This will:
+- Deploy the Symfony application to your cluster
+- Set up nginx ingress controller resources from ingress-controller folder if not exist.
+- Make the application accessible via 'https://symfony-php-demo.com'
+
+####### Description about Deployments stuffs#########
+
+# Deployments: the deployment used for main application, the deployment depends on php-migrate-job, the docker image built and available on the docker hub: mhkabir/symfony-demo:v5
+# Statefulset: the statefulset used for postgres database, it has volumeClaimTemplates, volumeMounts for data persistancy
+# HPA: the HorizontalPodAutoscaler used for scalibility of application pods, when the load will high auto scaling starts. Note: you need to have Metrics Server installed as prerequisites.
+# DB migration Job: the db migration job used to smooth  database migration, this job depends on availability of PostgreSQL. 
+# Ingress: the ingress used to allow external access, if you don't have ingress resources, the setup.sh will setup nginx ingress controller.
+# rol-rolebinding: there are three set of role and rolebinding used in order to access deployment's service account to approprite secret.
+# secrets and tls: there are two secrets have been used for db string, db credential, app secret and tls used for https.
+# service account: there are three service account have been used on three individual dployments
+# namespace: in the setup.sh file, you will find the namespace variable, you could change what ever you want!
+
+#Steps to Install Metrics Server (if already not exist)
+
+- Download the Metrics Server Manifests: You can find the Metrics Server manifests in the official Kubernetes repository on GitHub.
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+- Verify Installation: 
+
+Check if the Metrics Server is running correctly:
+kubectl get deployment metrics-server -n kube-system
+
+Ensure the pods are running:
+kubectl get pods -n kube-system | grep metrics-server
+
+
+## Container Image
+
+A Docker container image for the Symfony application has been built and published publicly to Docker Hub:
+
+    "mhkabir/symfony-demo:v5"
+
+This image is pulled and used during deployment by the Kubernetes resources.

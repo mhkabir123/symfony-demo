@@ -2,7 +2,6 @@
 
 NAMESPACE="demo-app"
 INGRESS_NAMESPACE="ingress-nginx"
-#INGRESS_URL="https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml"
 
 echo "Installing NGINX Ingress Controller (if not already installed)..."
 kubectl get ns $INGRESS_NAMESPACE >/dev/null 2>&1 || kubectl apply -f -n $INGRESS_NAMESPACE -f ./ingress-controller
@@ -25,7 +24,7 @@ while true; do
   sleep 5
 done
 
-echo "Creating application namespace: $NAMESPACE"
+echo "Creating application namespace: $NAMESPACE if not exists"
 kubectl get ns $NAMESPACE >/dev/null 2>&1 || kubectl create namespace $NAMESPACE
 
 
@@ -35,12 +34,6 @@ kubectl apply -n $NAMESPACE -f .
 # Optional: Add to /etc/hosts
 
 DOMAIN="symfony-php-demo.com"
-echo "Mapping $DOMAIN to $INGRESS_IP in /etc/hosts (you may be prompted for sudo password)..."
-
-if grep -q "$DOMAIN" /etc/hosts; then
-  echo "Updating existing host entry..."
-  sudo sed -i.bak "/$DOMAIN/d" /etc/hosts
-fi
-echo "$INGRESS_IP $DOMAIN" | sudo tee -a /etc/hosts > /dev/null
-
-echo "🎉 Setup complete! The Application is running on namespace:'$NAMESPACE' and You can access the SYMFONY DEMO app at https://$DOMAIN"
+echo -e "\n\033[1mAdd following entry to the hosts file, /etc/hosts:\033[0m"
+echo -e "$INGRESS_IP $DOMAIN"
+echo -e "\n🎉 Setup complete! The Application is running on namespace:'\033[1m$NAMESPACE\033[0m' and You can access the SYMFONY DEMO app at \033[1mhttps://$DOMAIN\033[0m"

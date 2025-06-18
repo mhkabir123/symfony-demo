@@ -1,0 +1,50 @@
+# create a service account
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: php-migrate-sa
+---
+# create a JOB for DB Migration
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: php-migrate-job
+spec:
+  template:
+    metadata:
+      name: php-migrate
+    spec:
+      serviceAccountName: php-migrate-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: mhkabir/symfony-demo:v5
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Waiting for PostgreSQL to become ready..."
+              until nc -z postgres.demo-app.svc.cluster.local 5432; do
+                echo "PostgreSQL is not ready yet. Sleeping..."
+                sleep 2
+              done
+
+              echo "PostgreSQL is ready. Starting migrations..."
+              php bin/console make:migration --no-interaction
+              php bin/console doctrine:migrations:migrate --no-interaction
+              php bin/console doctrine:fixtures:load --no-interaction
+              php bin/console cache:clear --no-interaction
+          env:
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: php-app-secret
+                  key: APP_SECRET
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: php-app-secret
+                  key: DATABASE_URL
+              
